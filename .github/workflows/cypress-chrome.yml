@@ -1,0 +1,72 @@
+name: Cypress Integration Tests (Chrome)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  cypress-chrome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check for .only in Cypress tests
+        run: |
+          ONLY_TESTS=$(grep -rl --include \*.cy.ts --include \*.spec.ts "\.only" cypress/e2e || true)
+          if [ -n "$ONLY_TESTS" ]; then
+            echo "Found .only in tests:"
+            echo "$ONLY_TESTS"
+            exit 1
+          fi
+
+      - name: Build UI
+        run: npm run build
+
+      - name: Start UI in mock mode
+        run: |
+          NEXT_PUBLIC_MOCK_SERVER=true npm run start &
+          sleep 15
+
+      - name: Run Cypress tests (Chrome)
+        run: npm run cy:test:chrome
+
+      - name: Upload Cypress HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-chrome-report
+          path: cypress/reports
+
+      # 🔔 TEAMS NOTIFICATION
+      - name: Notify Teams
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [ "$STATUS" = "success" ]; then
+            COLOR="00FF00"
+            TEXT="✅ Cypress Chrome tests PASSED"
+          else
+            COLOR="FF0000"
+            TEXT="❌ Cypress Chrome tests FAILED"
+          fi
+
+          curl -H "Content-Type: application/json" \
+            -d "{
+              \"title\": \"GCRD UI – Cypress Integration Tests\",
+              \"themeColor\": \"$COLOR\",
+              \"text\": \"$TEXT<br/>View report: <a href='$RUN_URL'>GitHub Actions Run</a>\"
+            }" \
+            ${{ secrets.TEAMS_WEBHOOK_URL }}
