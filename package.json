@@ -1,0 +1,12 @@
+{
+  "name": "cypress-action-test",
+  "private": true,
+  "scripts": {
+    "build": "echo \"build step\"",
+    "start": "echo \"mock server started\"",
+    "cy:test:chrome": "cypress run --browser chrome"
+  },
+  "devDependencies": {
+    "cypress": "^13.6.0"
+  }
+}
