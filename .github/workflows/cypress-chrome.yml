@@ -48,25 +48,4 @@ jobs:
           name: cypress-chrome-report
           path: cypress/reports
 
-      # 🔔 TEAMS NOTIFICATION
-      - name: Notify Teams
-        if: always()
-        run: |
-          STATUS="${{ job.status }}"
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          if [ "$STATUS" = "success" ]; then
-            COLOR="00FF00"
-            TEXT="✅ Cypress Chrome tests PASSED"
-          else
-            COLOR="FF0000"
-            TEXT="❌ Cypress Chrome tests FAILED"
-          fi
-
-          curl -H "Content-Type: application/json" \
-            -d "{
-              \"title\": \"GCRD UI – Cypress Integration Tests\",
-              \"themeColor\": \"$COLOR\",
-              \"text\": \"$TEXT<br/>View report: <a href='$RUN_URL'>GitHub Actions Run</a>\"
-            }" \
-            ${{ secrets.TEAMS_WEBHOOK_URL }}
+      
